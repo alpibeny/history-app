@@ -1,34 +1,142 @@
 <template>
-  <div class="page home-page">
-    <header class="header">
-      <h1>ИСТОРИЯ БЕЛАРУСИ</h1>
-      <span class="badge">РАЗДЕЛ I</span>
+  <div class="home-container">
+    <!-- Верхняя фиксированная плашка с прогрессом -->
+    <header class="fixed-header">
+      <div class="header-card">
+        <h1 class="app-title">ИСТОРИЯ БЕЛАРУСИ</h1>
+        <div class="progress-container">
+          <div class="section-badge">РАЗДЕЛ I</div>
+          <div class="progress-track">
+            <div class="progress-bar" style="width: 25%"></div>
+          </div>
+          <span class="progress-percentage">25%</span>
+        </div>
+      </div>
     </header>
 
-    <main class="content-grid">
-      <!-- Сюда пойдут круги уроков с макета -->
-      <div class="lesson-node active">
-        <div class="circle">Урок 1</div>
-        <button class="btn-primary" @click="$router.push('/lesson/1')">ПОВТОРИТЬ</button>
-      </div>
+    <!-- Центральная область для карусели (Идеальное выравнивание по центру) -->
+    <main class="center-content">
+      <LessonCarousel 
+        :lessons="lessons" 
+        :initial-index="1"
+        @select="handleLessonSelect"
+      />
     </main>
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import LessonCarousel from '../components/LessonCarousel.vue'
+
+const router = useRouter()
+
+const lessons = ref([
+  { id: 1, title: 'Эволюция общества и экономики в древности.', progress: '10/10', status: 'completed' },
+  { id: 2, title: 'Эволюция общества и экономики в древности.', progress: '2/10', status: 'in_progress' },
+  { id: 3, title: 'Эволюция общества и экономики в древности.', progress: '0/10', status: 'not_started' },
+])
+
+const handleLessonSelect = (id: number) => {
+  router.push('/lesson/' + id)
+}
+</script>
+
 <style scoped>
-.page {
-  padding: 20px;
+/* Контейнер занимает ровно высоту экрана смартфона и запрещает любой паразитный скролл */
+.home-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-color: #050814;
+  overflow: hidden;
+  box-sizing: border-box;
 }
-.header {
+
+/* Жестко фиксируем верхнее меню вверху экрана */
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+  justify-content: center;
+  padding: 16px 16px 0 16px;
+  z-index: 100;
+  /* Безопасная зона для "челок" на смартфонах */
+  padding-top: calc(16px + env(safe-area-inset-top)); 
 }
-.badge {
-  background: var(--accent-blue);
-  padding: 4px 12px;
-  border-radius: 12px;
+
+/* Плашка прогресса из макета */
+.header-card {
+  width: 100%;
+  max-width: 340px;
+  background-color: #0c132b;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.app-title {
   font-size: 0.8rem;
+  font-weight: 400;
+  color: #6c757d;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-badge {
+  background-color: #3a86ff;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 10px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 14px;
+  background-color: #161f38;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #3a86ff;
+  border-radius: 7px;
+}
+
+.progress-percentage {
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Центрируем карусель строго в пространстве между fixed-header и нативным таббаром */
+.center-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Компенсируем высоту верхнего меню (~110px) и нижнего таббара (~65px) внутренними отступами */
+  padding-top: calc(110px + env(safe-area-inset-top));
+  padding-bottom: calc(65px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 </style>
