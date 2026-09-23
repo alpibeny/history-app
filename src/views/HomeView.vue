@@ -26,22 +26,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LessonCarousel from '../components/LessonCarousel.vue'
+import { LessonRepository, type Lesson } from '../repositories/LessonRepository'
 
 const router = useRouter()
+const lessonRepo = new LessonRepository()
 
-const lessons = ref([
-  { id: 1, title: 'Эволюция общества и экономики в древности.', progress: '10/10', status: 'completed' },
-  { id: 2, title: 'Эволюция общества и экономики в древности.', progress: '2/10', status: 'in_progress' },
-  { id: 3, title: 'Эволюция общества и экономики в древности.', progress: '0/10', status: 'not_started' },
-])
+// Переменная теперь принимает данные из SQLite
+const lessons = ref<Lesson[]>([])
+const isLoading = ref(true)
 
 const handleLessonSelect = (id: number) => {
   router.push('/lesson/' + id)
 }
+
+onMounted(async () => {
+  try {
+    // Загружаем уроки из оффлайн-репозитория
+    lessons.value = await lessonRepo.getLessonsForCarousel()
+    
+    // Искусственная заглушка: если вдруг сидинг не успел, подстрахуемся
+    if (lessons.value.length === 0) {
+      lessons.value = [
+        { id: 1, categoryId: '1', title: 'Эволюция общества и экономики в древности.', content: '', orderIndex: 1, progress: '10/10', status: 'completed' },
+        { id: 2, categoryId: '1', title: 'Эволюция общества и экономики в древности.', content: '', orderIndex: 2, progress: '2/10', status: 'in_progress' },
+        { id: 3, categoryId: '1', title: 'Эволюция общества и экономики в древности.', content: '', orderIndex: 3, progress: '0/10', status: 'not_started' }
+      ]
+    }
+  } catch (error) {
+    console.error('Failed to load lessons from database:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
+
 
 <style scoped>
 /* Контейнер занимает ровно высоту экрана смартфона и запрещает любой паразитный скролл */

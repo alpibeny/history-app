@@ -6,12 +6,17 @@ export class DatabaseService {
   private sqliteConnection: SQLiteConnection | null = null
   private dbConnection: SQLiteDBConnection | null = null
   private isDbInitialized = false
+  private isWeb = false
 
   private constructor() {
-    this.sqliteConnection = new SQLiteConnection(CapacitorSQLite)
+    const platform = Capacitor.getPlatform()
+    this.isWeb = platform === 'web'
+    
+    if (!this.isWeb) {
+      this.sqliteConnection = new SQLiteConnection(CapacitorSQLite)
+    }
   }
 
-  // Синглтон для единой точки доступа к БД во всем приложении (SRP)
   public static getInstance(): DatabaseService {
     if (!DatabaseService.instance) {
       DatabaseService.instance = new DatabaseService()
@@ -23,9 +28,14 @@ export class DatabaseService {
     if (this.isDbInitialized) return
 
     try {
-      const platform = Capacitor.getPlatform()
-      
-      // На мобилках используем нативный SQLite, на вебе плагин автоматически подменит на IndexedDB
+      if (this.isWeb) {
+        // Если мы в браузере — просто включаем флаг готовности, БД будет эмулироваться репозиторием
+        this.isDbInitialized = true
+        console.log('Database Service running in WEB mode (Emulation).')
+        return
+      }
+
+      // Нативная инициализация для iOS / Android
       this.dbConnection = await this.sqliteConnection!.createConnection(
         'history_app_db',
         false,
@@ -38,7 +48,7 @@ export class DatabaseService {
       await this.createTables()
       
       this.isDbInitialized = true
-      console.log('SQLite Database successfully initialized.')
+      console.log('SQLite Database successfully initialized on Native Platform.')
     } catch (error) {
       console.error('Database initialization failed:', error)
       throw error
@@ -46,14 +56,21 @@ export class DatabaseService {
   }
 
   public getDb(): SQLiteDBConnection {
+    if (this.isWeb) {
+      // Возвращаем пустой объект-заглушку для веба, чтобы методы не падали по null-pointer
+      return {} as SQLiteDBConnection
+    }
     if (!this.dbConnection) {
       throw new Error('Database connection is not established. Call initialize() first.')
     }
     return this.dbConnection
   }
 
+  public checkIsWeb(): boolean {
+    return this.isWeb
+  }
+
   private async createTables(): Promise<void> {
-    // Создаем структуру таблиц: категории, уроки и карточки FSRS
     const schema = `
       CREATE TABLE IF NOT EXISTS categories (
         id TEXT PRIMARY KEY,
